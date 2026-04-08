@@ -1,10 +1,11 @@
 'use client';
 
 import { Camera, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -14,59 +15,175 @@ export default function Navigation() {
     }
   };
 
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 100);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    const updateBodyOverflow = () => {
+      if (isOpen) {
+        document.body.classList.add('overflow-hidden');
+      } else {
+        document.body.classList.remove('overflow-hidden');
+      }
+    };
+
+    updateBodyOverflow();
+
+    return () => {
+      document.body.classList.remove('overflow-hidden');
+    };
+  }, [isOpen]);
+
   return (
-    <nav className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm shadow-sm z-50">
+    <nav
+      id="navbar"
+      className={`fixed top-0 left-0 right-0 transition-all duration-300 z-50 ${
+        isScrolled
+          ? 'bg-bg/95 backdrop-blur-md border-b border-border'
+          : 'bg-bg/0 backdrop-blur-sm'
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-2">
-            <Camera className="h-8 w-8 text-primary-600" />
-            <span className="font-bold text-xl">Fadhlan Khalid Photography</span>
+            <Camera className="h-8 w-8 text-accent" />
+            <span className="font-display text-xl font-semibold text-fg">
+              Fadhlan Khalid Photography
+            </span>
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <button onClick={() => scrollToSection('hero')} className="text-gray-700 hover:text-primary-600 transition">Home</button>
-            <button onClick={() => scrollToSection('packages')} className="text-gray-700 hover:text-primary-600 transition">Packages</button>
-            <button onClick={() => scrollToSection('add-ons')} className="text-gray-700 hover:text-primary-600 transition">Add-ons</button>
-            <button onClick={() => scrollToSection('portfolio')} className="text-gray-700 hover:text-primary-600 transition">Portfolio</button>
-            <button onClick={() => scrollToSection('service-area')} className="text-gray-700 hover:text-primary-600 transition">Service Area</button>
-            <a
-              href="https://wa.me/60127704714?text=Saya%20nak%20tanya%20pakej"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-full font-medium transition"
+            <button
+              onClick={() => scrollToSection('hero')}
+              className="nav-link text-sm font-medium hover:text-fg py-2"
             >
-              WhatsApp
-            </a>
+              Home
+            </button>
+            <button
+              onClick={() => scrollToSection('packages')}
+              className="nav-link text-sm font-medium hover:text-fg py-2"
+            >
+              Packages
+            </button>
+            <button
+              onClick={() => scrollToSection('add-ons')}
+              className="nav-link text-sm font-medium hover:text-fg py-2"
+            >
+              Add-ons
+            </button>
+            <button
+              onClick={() => scrollToSection('portfolio')}
+              className="nav-link text-sm font-medium hover:text-fg py-2"
+            >
+              Portfolio
+            </button>
+            <button
+              onClick={() => scrollToSection('service-area')}
+              className="nav-link text-sm font-medium hover:text-fg py-2"
+            >
+              Service Area
+            </button>
+            <button
+              onClick={() => scrollToSection('contact')}
+              className="nav-link text-sm font-medium hover:text-fg py-2"
+            >
+              Contact
+            </button>
+            <button
+              onClick={() => {
+                window.open('https://wa.me/60127704714?text=Saya%20nak%20tanya%20pakej', '_blank');
+              }}
+              className="btn-primary inline-flex items-center gap-2"
+            >
+              Book Now
+            </button>
           </div>
 
           {/* Mobile menu button */}
-          <button onClick={() => setIsOpen(!isOpen)} className="md:hidden p-2">
-            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="md:hidden p-2"
+            aria-label={isOpen ? 'Close menu' : 'Open menu'}
+          >
+            {isOpen ? <X className="h-6 w-6 text-fg" /> : <Menu className="h-6 w-6 text-fg" />}
           </button>
         </div>
       </div>
 
       {/* Mobile Navigation */}
-      {isOpen && (
-        <div className="md:hidden bg-white border-t">
-          <div className="px-4 py-4 space-y-3">
-            <button onClick={() => scrollToSection('hero')} className="block w-full text-left text-gray-700 hover:text-primary-600 py-2">Home</button>
-            <button onClick={() => scrollToSection('packages')} className="block w-full text-left text-gray-700 hover:text-primary-600 py-2">Packages</button>
-            <button onClick={() => scrollToSection('add-ons')} className="block w-full text-left text-gray-700 hover:text-primary-600 py-2">Add-ons</button>
-            <button onClick={() => scrollToSection('portfolio')} className="block w-full text-left text-gray-700 hover:text-primary-600 py-2">Portfolio</button>
-            <button onClick={() => scrollToSection('service-area')} className="block w-full text-left text-gray-700 hover:text-primary-600 py-2">Service Area</button>
-            <a
-              href="https://wa.me/60127704714?text=Saya%20nak%20tanya%20pakej"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-full font-medium text-center transition"
+      <div
+        id="mobileMenu"
+        className={`md:hidden fixed inset-0 bg-bg z-50 transition-transform duration-300 ${
+          isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="p-6">
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={() => setIsOpen(false)}
+              className="p-2"
+              aria-label="Close menu"
             >
-              WhatsApp
-            </a>
+              <X className="h-6 w-6 text-fg" />
+            </button>
+          </div>
+          <div className="flex flex-col items-center gap-8 mt-4">
+            <button
+              onClick={() => scrollToSection('hero')}
+              className="font-display text-xl text-fg"
+            >
+              Home
+            </button>
+            <button
+              onClick={() => scrollToSection('packages')}
+              className="font-display text-xl text-fg"
+            >
+              Packages
+            </button>
+            <button
+              onClick={() => scrollToSection('add-ons')}
+              className="font-display text-xl text-fg"
+            >
+              Add-ons
+            </button>
+            <button
+              onClick={() => scrollToSection('portfolio')}
+              className="font-display text-xl text-fg"
+            >
+              Portfolio
+            </button>
+            <button
+              onClick={() => scrollToSection('service-area')}
+              className="font-display text-xl text-fg"
+            >
+              Service Area
+            </button>
+            <button
+              onClick={() => scrollToSection('contact')}
+              className="font-display text-xl text-fg"
+            >
+              Contact
+            </button>
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                window.open('https://wa.me/60127704714?text=Saya%20nak%20tanya%20pakej', '_blank');
+              }}
+              className="btn-primary mt-4"
+            >
+              Book Now
+            </button>
           </div>
         </div>
-      )}
+      </div>
     </nav>
   );
 }

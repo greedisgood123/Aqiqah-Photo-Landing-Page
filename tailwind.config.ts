@@ -9,6 +9,13 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        bg: '#0f0d0a',
+        fg: '#f5f0e8',
+        muted: '#8a8279',
+        accent: '#c9a962',
+        card: '#1a1814',
+        border: '#2a2620',
+        warm: '#d4c4a8',
         primary: {
           50: '#fdf4ff',
           100: '#fae8ff',
@@ -21,6 +28,10 @@ const config: Config = {
           800: '#86198f',
           900: '#701a75',
         },
+      },
+      fontFamily: {
+        display: ['Cormorant Garamond', 'serif'],
+        body: ['Outfit', 'sans-serif'],
       },
     },
   },
