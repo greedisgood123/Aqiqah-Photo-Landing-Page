@@ -11,6 +11,11 @@ const nextConfig = {
         hostname: 'localhost',
         pathname: '/portfolio/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'uovhihxlbcrfrzydcyfr.supabase.co',
+        pathname: '/storage/v1/**',
+      },
     ],
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200],

@@ -17,9 +17,11 @@ export interface PortfolioImage {
   folderDisplayName: string
 }
 
-function getPublicUrl(folder: string, filename: string): string {
+function getPublicUrl(folder: string, filename: string, thumbnail = false): string {
   const supabase = getSupabaseClient()
-  const { data } = supabase.storage.from('portfolio').getPublicUrl(`${folder}/${filename}`)
+  const { data } = supabase.storage.from('portfolio').getPublicUrl(`${folder}/${filename}`, {
+    transform: thumbnail ? { width: 400, height: 400, resize: 'cover' } : undefined
+  })
   return data.publicUrl
 }
 
@@ -30,7 +32,6 @@ export async function fetchPortfolioFolders(): Promise<PortfolioFolder[]> {
   const supabase = getSupabaseClient()
 
   const { data: folders, error } = await supabase
-    .schema('portfolio')
     .from('folders')
     .select('*, images(*)')
     .order('date', { ascending: false })
@@ -48,7 +49,7 @@ export async function fetchPortfolioFolders(): Promise<PortfolioFolder[]> {
       id: folder.id,
       name: folder.name,
       displayName: folder.display_name,
-      thumbnail: thumbnailFile ? getPublicUrl(folder.name, thumbnailFile) : '',
+      thumbnail: thumbnailFile ? getPublicUrl(folder.name, thumbnailFile, true) : '',
       images: images.map(img => getPublicUrl(folder.name, img.filename)),
       date: folder.date
     }
@@ -62,7 +63,6 @@ export async function fetchPortfolioFolder(folderName: string): Promise<Portfoli
   const supabase = getSupabaseClient()
 
   const { data: folder, error } = await supabase
-    .schema('portfolio')
     .from('folders')
     .select('*, images(*)')
     .eq('name', folderName)

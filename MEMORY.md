@@ -163,6 +163,33 @@ npm run start      # Production server
 
 ## Version History
 
+### v1.3.0 (2026-04-08) - Supabase Integration Bug Fixes
+
+**Critical Fixes (app would not work without these):**
+- Fixed missing RLS `SELECT` policies for `portfolio.folders` and `portfolio.images` tables — without these, all anon queries returned empty results even with RLS enabled
+- Fixed storage policy SQL syntax in `DEPLOYMENT_GUIDE.md` (`SELECT` doesn't take `WITH CHECK`, `TO` must come before `USING`) and deduplicated policy names
+- Fixed wrong schema target: queries now use `.schema('portfolio').from('folders')` instead of `.from('folders')` which was hitting `public` schema
+- Fixed `PortfolioFolder` interface conflict in `app/page.tsx` — local interface shadowed the imported type from `database.ts`, causing SWC parse error that broke the build
+- Fixed missing `)` in ternary else branch in portfolio JSX (line ~538)
+
+**Performance:**
+- Eliminated N+1 queries in `fetchPortfolioFolders()` — now uses a single joined query `select('*, images(*)')` instead of one query per folder
+
+**Code Quality:**
+- Replaced manual Supabase URL construction with SDK's `getPublicUrl()` in `database.ts`
+- Replaced module-level `createClient()` with lazy `getSupabaseClient()` in `supabase.ts` — prevents build crash when env vars aren't set
+- Updated `storage.ts` to use lazy client getter
+- Removed dead code from `app/page.tsx`: `PORTFOLIO_FOLDERS`, `generatePageImages`, `generateFirzanaImages` (were fallback data, never used after Supabase migration)
+- Removed unused `@supabase/auth-helpers-nextjs` dependency from `package.json`
+- Updated `DEPLOYMENT_GUIDE.md` Step 3 to recommend slug-style storage folder names (avoids URL encoding issues with spaces/pipes)
+
+**Build Status:** ✅ Production build successful - 71.7 kB / First Load JS: 156 kB
+
+### Key Patterns (post-v1.3.0)
+- Supabase client: always call `getSupabaseClient()` lazily — never import a module-level `supabase` instance
+- Schema: always use `.schema('portfolio').from(...)` for DB queries
+- Storage paths: use slug names (e.g. `aqiqah-emma-yasmin-8-feb-2026`), store display name in `display_name` column
+
 ### v1.1.0 (2026-04-07) - Code Quality Improvements
 **Major Refactoring & Bug Fixes:**
 
@@ -262,13 +289,14 @@ CREATE TABLE portfolio.images (
 - **next.config.js**: Added `/portfolio/**` remote pattern for Supabase
 - **Build Scripts**: `vercel-build`, `vercel-start` added to package.json
 
-### Current Status (v1.2.0 - 2026-04-08)
+### Current Status (v1.3.0 - 2026-04-08)
 - [ ] Supabase project created and configured
-- [ ] Database schema created in Supabase
-- [ ] Portfolio images uploaded to Supabase storage
+- [ ] Database schema created in Supabase (use corrected SQL in DEPLOYMENT_GUIDE.md)
+- [ ] Portfolio images uploaded to Supabase storage (use slug folder names)
 - [ ] Environment variables configured in Vercel
 - [ ] Production deployment complete
 - [ ] Testing verified for all features
+- [x] All Supabase integration code bugs fixed and build passing
 
 ### App Behavior with Supabase
 - Portfolio section shows loading state initially

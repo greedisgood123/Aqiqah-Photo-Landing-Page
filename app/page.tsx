@@ -350,7 +350,7 @@ Sila hubungi saya untuk pengesahan. Terima kasih!`;
     document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
 
     return () => observer.disconnect();
-  }, []);
+  }, [portfolioFolders]);
 
   // ==========================================
   // KEYBOARD NAVIGATION
