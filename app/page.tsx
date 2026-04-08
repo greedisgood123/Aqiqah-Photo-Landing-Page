@@ -15,6 +15,7 @@ import {
   CalendarIcon,
 } from '@/components/icons';
 import { useState, useEffect, useCallback } from 'react';
+import { fetchPortfolioFolders, type PortfolioFolder } from '@/lib/database';
 
 // ==========================================
 // DATA MODELS
@@ -261,6 +262,30 @@ export default function Home() {
   const [selectedFolder, setSelectedFolder] = useState<PortfolioFolder | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [portfolioFolders, setPortfolioFolders] = useState<PortfolioFolder[]>([]);
+  const [isPortfolioLoading, setIsPortfolioLoading] = useState(true);
+  const [portfolioError, setPortfolioError] = useState<string | null>(null);
+
+  // ==========================================
+  // PORTFOLIO LOADING
+  // ==========================================
+  useEffect(() => {
+    async function loadPortfolios() {
+      try {
+        setIsPortfolioLoading(true);
+        setPortfolioError(null);
+        const folders = await fetchPortfolioFolders();
+        setPortfolioFolders(folders);
+      } catch (err) {
+        console.error('Failed to load portfolios:', err);
+        setPortfolioError('Failed to load portfolio images. Please try again later.');
+      } finally {
+        setIsPortfolioLoading(false);
+      }
+    }
+
+    loadPortfolios();
+  }, []);
 
   // ==========================================
   // WHATSAPP FUNCTIONS
@@ -358,12 +383,8 @@ Sila hubungi saya untuk pengesahan. Terima kasih!`;
       const length = selectedFolder.images.length;
       setCurrentImageIndex((prev) =>
         direction === 'next'
-          ? prev === length - 1
-            ? 0
-            : prev + 1
-          : prev === 0
-            ? length - 1
-            : prev - 1
+          ? (prev + 1) % length
+          : (prev - 1 + length) % length
       );
     },
     [selectedFolder]
@@ -553,10 +574,33 @@ Sila hubungi saya untuk pengesahan. Terima kasih!`;
 
           {/* Gallery Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="gallery">
-            {PORTFOLIO_FOLDERS.map((folder, index) => (
-              <div
-                key={folder.name}
-                className={`gallery-thumbnail reveal reveal-delay-${index % 4}`}
+            {isPortfolioLoading ? (
+              <div className="col-span-full flex justify-center items-center py-20">
+                <div className="text-accent text-6xl mb-4">
+                  <svg className="animate-spin" width="48" height="48" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12v8a2 2 2 2 6"></path>
+                  </svg>
+                </div>
+                <p className="text-fg text-lg">Loading portfolio...</p>
+              </div>
+            ) : portfolioError ? (
+              <div className="col-span-full text-center py-20">
+                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6">
+                  <p className="text-fg text-lg mb-2">{portfolioError}</p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="btn-primary"
+                  >
+                    Retry
+                  </button>
+                </div>
+              </div>
+            ) : (
+              portfolioFolders.map((folder, index) => (
+                <div
+                  key={folder.id}
+                  className={`gallery-thumbnail reveal reveal-delay-${index % 4}`}
                 onClick={() => openGallery(folder)}
               >
                 <Image
@@ -825,12 +869,13 @@ Sila hubungi saya untuk pengesahan. Terima kasih!`;
                 <ChevronRightIcon className="text-accent" />
               </button>
               <Image
+                key={selectedFolder.images[currentImageIndex]}
                 src={selectedFolder.images[currentImageIndex]}
                 alt={`${selectedFolder.displayName} - Image ${currentImageIndex + 1}`}
-                width={1200}
-                height={900}
+                fill
                 className="gallery-image"
-                priority
+                unoptimized
+                loading="eager"
               />
             </div>
             <div className="gallery-info">
