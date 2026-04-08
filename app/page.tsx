@@ -89,86 +89,6 @@ const ADDONS = {
 
 type AddonKey = keyof typeof ADDONS;
 
-// Portfolio folder structure - folder-based organization
-interface PortfolioFolder {
-  name: string;
-  displayName: string;
-  thumbnail: string;
-  images: string[];
-}
-
-const generatePageImages = (count: number): string[] => {
-  return Array.from({ length: count }, (_, i) =>
-    `page_${String(i + 1).padStart(2, '0')}.jpg`
-  );
-};
-
-const generateFirzanaImages = (): string[] => {
-  return [
-    '1FK_8748_2.jpg',
-    '1FK_8764_2.jpg',
-    '1FK_8768_2.jpg',
-    '1FK_8811_2.jpg',
-    '1FK_8830_2.jpg',
-    '1FK_8860_2.jpg',
-    '1FK_8884_2.jpg',
-    '1FK_8953_2.jpg',
-    '1FK_8957_2.jpg',
-    '1FK_8977_2.jpg',
-    '1FK_8982_2.jpg',
-    '1FK_9001_2.jpg',
-    '1FK_9016_2.jpg',
-    '1FK_9039_2.jpg',
-    '1FK_9057_2.jpg',
-    '1FK_9060_2.jpg',
-    '1FK_9165_2.jpg',
-    '1FK_9174_2.jpg',
-    '1FK_9178_2.jpg',
-    '1FK_9195_2.jpg',
-    '1FK_9204_2.jpg',
-    '1FK_9207_2.jpg',
-    '1FK_9211_2.jpg',
-    '1FK_9220_2.jpg',
-    '1FK_9241_2.jpg',
-    '1FK_9252_2.jpg',
-    '1FK_9255_2.jpg',
-  ];
-};
-
-const PORTFOLIO_FOLDERS: PortfolioFolder[] = [
-  {
-    name: 'Aqiqah Emma Yasmin | 8 Feb 2026',
-    displayName: 'Emma Yasmin | 8 Feb 2026',
-    thumbnail: '/portfolio/Aqiqah Emma Yasmin | 8 Feb 2026/page_01.jpg',
-    images: generatePageImages(20).map(img =>
-      `/portfolio/Aqiqah Emma Yasmin | 8 Feb 2026/${img}`
-    ),
-  },
-  {
-    name: 'Aqiqah  Zarif Aidan 14 Feb 2026',
-    displayName: 'Zarif Aidan | 14 Feb 2026',
-    thumbnail: '/portfolio/Aqiqah  Zarif Aidan 14 Feb 2026/page_01.jpg',
-    images: generatePageImages(20).map(img =>
-      `/portfolio/Aqiqah  Zarif Aidan 14 Feb 2026/${img}`
-    ),
-  },
-  {
-    name: 'Aqiqah Firzana | 14 Feb 2022',
-    displayName: 'Firzana | 14 Feb 2022',
-    thumbnail: '/portfolio/Aqiqah Firzana | 14 Feb 2022/1FK_8748_2.jpg',
-    images: generateFirzanaImages().map(img =>
-      `/portfolio/Aqiqah Firzana | 14 Feb 2022/${img}`
-    ),
-  },
-  {
-    name: 'Aqiqah  Amir 9 Feb 2026',
-    displayName: 'Amir | 9 Feb 2026',
-    thumbnail: '/portfolio/Aqiqah  Amir 9 Feb 2026/page_01.jpg',
-    images: generatePageImages(20).map(img =>
-      `/portfolio/Aqiqah  Amir 9 Feb 2026/${img}`
-    ),
-  },
-];
 
 const testimonials = [
   {
@@ -615,7 +535,8 @@ Sila hubungi saya untuk pengesahan. Terima kasih!`;
                   <span className="text-fg text-sm font-medium">{folder.displayName}</span>
                 </div>
               </div>
-            ))}
+            ))
+            )}
           </div>
 
           <div className="text-center mt-12 reveal">

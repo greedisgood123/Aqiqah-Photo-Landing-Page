@@ -201,6 +201,93 @@ npm run start      # Production server
 - WhatsApp booking integration
 - Responsive design with animations
 
+## Cloud Deployment & Database
+
+### Infrastructure Stack
+- **Hosting**: Vercel (free tier for Next.js)
+- **Database & Storage**: Supabase (free tier, 500 MB storage)
+- **CDN**: Supabase global network for image delivery
+
+### Supabase Integration
+- **Client**: `@supabase/supabase-js` v2.102.1
+- **Database Schema**: `portfolio.folders`, `portfolio.images` tables
+- **Storage Bucket**: `portfolio` (public read access enabled)
+- **RLS Policies**: Row Level Security enabled for public read access
+- **Client Configuration**: `lib/supabase.ts`
+- **Database Functions**: `lib/database.ts` with `fetchPortfolioFolders()`, `fetchPortfolioFolder()`
+- **Storage Functions**: `lib/storage.ts` with upload/delete functions
+
+### Environment Variables
+Required for production:
+```
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
+
+Set via:
+- Vercel Dashboard → Environment Variables
+- Local development: `.env.local` file
+
+### Database Schema
+```sql
+-- Tables within 'portfolio' schema
+CREATE TABLE portfolio.folders (
+  id UUID PRIMARY KEY,
+  name TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  date TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE portfolio.images (
+  id UUID PRIMARY KEY,
+  folder_id UUID REFERENCES portfolio.folders(id),
+  filename TEXT NOT NULL,
+  file_size INTEGER,
+  order_index INTEGER NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(folder_id, order_index)
+);
+```
+
+### Key Implementation Details
+- **Portfolio Loading**: Shows spinner while fetching from Supabase
+- **Error Handling**: Displays error message with retry button
+- **Image Optimization**: Uses `unoptimized` prop to avoid Next.js optimization timeout
+- **Gallery Navigation**: Fixed modulo arithmetic for circular navigation
+- **Key-based React**: Uses `key` prop on Image components to prevent caching issues
+
+### Deployment Configuration
+- **vercel.json**: Build configuration with environment variable mappings
+- **next.config.js**: Added `/portfolio/**` remote pattern for Supabase
+- **Build Scripts**: `vercel-build`, `vercel-start` added to package.json
+
+### Current Status (v1.2.0 - 2026-04-08)
+- [ ] Supabase project created and configured
+- [ ] Database schema created in Supabase
+- [ ] Portfolio images uploaded to Supabase storage
+- [ ] Environment variables configured in Vercel
+- [ ] Production deployment complete
+- [ ] Testing verified for all features
+
+### App Behavior with Supabase
+- Portfolio section shows loading state initially
+- Falls back to local data if Supabase fetch fails
+- All existing features (WhatsApp, packages, testimonials) work normally
+- Gallery images load from Supabase CDN URLs
+- Responsive design preserved across all breakpoints
+
+### Migration Status
+**From**: Local file system (`/public/portfolio/`, 160MB images)
+**To**: Supabase cloud storage (portfolio bucket)
+**Approach**: Manual upload via Supabase Dashboard (recommended for one-time migration)
+
+### Performance Targets
+- Image load time: < 3 seconds (from Supabase CDN)
+- Gallery navigation: < 1 second between images
+- Portfolio fetch: < 2 seconds initial load
+- Lighthouse score: > 90 for performance
+
 ## Future Enhancement Ideas
 - Multi-language support (Malay, English)
 - Client photo gallery (password-protected)

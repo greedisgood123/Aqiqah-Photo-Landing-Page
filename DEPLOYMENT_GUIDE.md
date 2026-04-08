@@ -54,30 +54,31 @@ CREATE TABLE portfolio.images (
 ALTER TABLE portfolio.folders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE portfolio.images ENABLE ROW LEVEL SECURITY;
 
+-- Allow public (anon) read access to folders and images
+CREATE POLICY "public_select_folders" ON portfolio.folders
+FOR SELECT TO anon USING (true);
+
+CREATE POLICY "public_select_images" ON portfolio.images
+FOR SELECT TO anon USING (true);
+
 -- Create storage bucket
 INSERT INTO storage.buckets (id, name, public) VALUES ('portfolio', 'portfolio', true);
 
--- Create storage policy for public read access
-CREATE POLICY "Public read access" ON storage.objects
-FOR SELECT USING (true)
-TO anon
-WITH CHECK (bucket_id = 'portfolio');
+-- Storage policies
+CREATE POLICY "portfolio_public_select" ON storage.objects
+FOR SELECT TO anon USING (bucket_id = 'portfolio');
 
-CREATE POLICY "Public read access" ON storage.objects
-FOR INSERT
-TO authenticated
-WITH CHECK (bucket_id = 'portfolio');
+CREATE POLICY "portfolio_auth_insert" ON storage.objects
+FOR INSERT TO authenticated WITH CHECK (bucket_id = 'portfolio');
 
-CREATE POLICY "Public read access" ON storage.objects
-FOR UPDATE
-TO authenticated
-WITH CHECK (bucket_id = 'portfolio');
+CREATE POLICY "portfolio_auth_update" ON storage.objects
+FOR UPDATE TO authenticated USING (bucket_id = 'portfolio') WITH CHECK (bucket_id = 'portfolio');
 ```
 
 7. Go to Settings → API
 8. Create new API keys:
-   - Copy **Project URL** (NEXT_PUBLIC_SUPABASE_URL)
-   - Copy **anon public key** (NEXT_PUBLIC_SUPABASE_ANON_KEY)
+   - Copy **Project URL** (NEXT_PUBLIC_SUPABASE_URL) = https://uovhihxlbcrfrzydcyfr.supabase.co
+   - Copy **anon public key** (NEXT_PUBLIC_SUPABASE_ANON_KEY) = sb_publishable_lzG9D6Wu3WUEfrvLzEA4yQ_0oJwAOS9
 
 ### Step 2: Configure Environment Variables
 1. Open `.env.local` in your project
@@ -91,13 +92,19 @@ WITH CHECK (bucket_id = 'portfolio');
 1. Go to Supabase Dashboard → Storage
 2. Create `portfolio` bucket if not exists
 3. Upload your existing portfolio images:
-   - Create folders matching your structure:
-     - `Aqiqah Emma Yasmin | 8 Feb 2026`
-     - `Aqiqah  Zarif Aidan 14 Feb 2026`
-     - `Aqiqah Firzana | 14 Feb 2022`
-     - `Aqiqah  Amir 9 Feb 2026`
+   - **Important:** Use slug-style names for storage folder paths (no spaces, pipes, or special characters) to avoid URL encoding issues. Store the human-readable name in `display_name` in the database.
+   - Create folders with slug names:
+     - `aqiqah-emma-yasmin-8-feb-2026`
+     - `aqiqah-zarif-aidan-14-feb-2026`
+     - `aqiqah-firzana-14-feb-2022`
+     - `aqiqah-amir-9-feb-2026`
    - Upload images to each folder (page_01.jpg through page_20.jpg)
    - Use consistent naming (page_01.jpg, page_02.jpg, etc.)
+4. Insert matching rows into `portfolio.folders` via Supabase Table Editor:
+   - `name` = slug (matches storage folder path, e.g. `aqiqah-emma-yasmin-8-feb-2026`)
+   - `display_name` = human-readable (e.g. `Aqiqah Emma Yasmin | 8 Feb 2026`)
+   - `date` = ISO date string (e.g. `2026-02-08`)
+5. Insert rows into `portfolio.images` for each image with the correct `folder_id` and `order_index`
 
 ### Step 4: Deploy to Vercel
 Option A: **Install Vercel CLI** (Recommended)

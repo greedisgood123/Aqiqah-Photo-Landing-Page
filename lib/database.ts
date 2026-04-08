@@ -1,4 +1,4 @@
-import { supabase, type Folder, type Image } from './supabase'
+import { getSupabaseClient, type Folder, type Image } from './supabase'
 
 export interface PortfolioFolder {
   id: string
@@ -17,13 +17,22 @@ export interface PortfolioImage {
   folderDisplayName: string
 }
 
+function getPublicUrl(folder: string, filename: string): string {
+  const supabase = getSupabaseClient()
+  const { data } = supabase.storage.from('portfolio').getPublicUrl(`${folder}/${filename}`)
+  return data.publicUrl
+}
+
 /**
- * Fetch all portfolio folders ordered by date (newest first)
+ * Fetch all portfolio folders with their images in a single query
  */
 export async function fetchPortfolioFolders(): Promise<PortfolioFolder[]> {
+  const supabase = getSupabaseClient()
+
   const { data: folders, error } = await supabase
+    .schema('portfolio')
     .from('folders')
-    .select('*')
+    .select('*, images(*)')
     .order('date', { ascending: false })
 
   if (error) {
@@ -31,88 +40,48 @@ export async function fetchPortfolioFolders(): Promise<PortfolioFolder[]> {
     return []
   }
 
-  // Transform database folders to portfolio folder structure
-  const portfolioFolders = await Promise.all(
-    folders.map(async (folder: Folder) => {
-      const { data: images, error: imagesError } = await supabase
-        .from('images')
-        .select('*')
-        .eq('folder_id', folder.id)
-        .order('order_index', { ascending: true })
+  return folders.map((folder: Folder & { images: Image[] }) => {
+    const images = (folder.images || []).sort((a, b) => a.order_index - b.order_index)
+    const thumbnailFile = images[0]?.filename || ''
 
-      if (imagesError) {
-        console.error(`Error fetching images for folder ${folder.name}:`, imagesError)
-        return {
-          id: folder.id,
-          name: folder.name,
-          displayName: folder.display_name,
-          thumbnail: getPublicUrl('portfolio', folder.name, images?.[0]?.filename || ''),
-          images: images?.map(img => getPublicUrl('portfolio', folder.name, img.filename)) || [],
-          date: folder.date
-        }
-      }
-
-      // Use first image as thumbnail, or empty array
-      const thumbnailFile = images?.[0]?.filename || ''
-      const allImages = images?.map(img => img.filename) || []
-
-      return {
-        id: folder.id,
-        name: folder.name,
-        displayName: folder.display_name,
-        thumbnail: getPublicUrl('portfolio', folder.name, thumbnailFile),
-        images: allImages.map(filename => getPublicUrl('portfolio', folder.name, filename)),
-        date: folder.date
-      }
-    })
-  )
-
-  return portfolioFolders
-}
-
-/**
- * Generate public URL for an image in Supabase storage
- */
-function getPublicUrl(bucket: string, folder: string, filename: string): string {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-  const url = new URL(`${supabaseUrl}/storage/v1/object/public/${bucket}/${folder}/${filename}`)
-  return url.toString()
+    return {
+      id: folder.id,
+      name: folder.name,
+      displayName: folder.display_name,
+      thumbnail: thumbnailFile ? getPublicUrl(folder.name, thumbnailFile) : '',
+      images: images.map(img => getPublicUrl(folder.name, img.filename)),
+      date: folder.date
+    }
+  })
 }
 
 /**
  * Get a single portfolio folder by name
  */
 export async function fetchPortfolioFolder(folderName: string): Promise<PortfolioFolder | null> {
-  const { data: folders } = await supabase
+  const supabase = getSupabaseClient()
+
+  const { data: folder, error } = await supabase
+    .schema('portfolio')
     .from('folders')
-    .select('*')
+    .select('*, images(*)')
     .eq('name', folderName)
     .single()
 
-  if (!folders) {
+  if (error || !folder) {
+    console.error(`Error fetching folder ${folderName}:`, error)
     return null
   }
 
-  const { data: images, error: imagesError } = await supabase
-    .from('images')
-    .select('*')
-    .eq('folder_id', folders.id)
-    .order('order_index', { ascending: true })
-
-  if (imagesError) {
-    console.error(`Error fetching images for folder ${folderName}:`, imagesError)
-    return null
-  }
-
-  const thumbnailFile = images?.[0]?.filename || ''
-  const allImages = images?.map(img => img.filename) || []
+  const images = (folder.images || []).sort((a: Image, b: Image) => a.order_index - b.order_index)
+  const thumbnailFile = images[0]?.filename || ''
 
   return {
-    id: folders.id,
-    name: folders.name,
-    displayName: folders.display_name,
-    thumbnail: getPublicUrl('portfolio', folders.name, thumbnailFile),
-    images: allImages.map(filename => getPublicUrl('portfolio', folders.name, filename)),
-    date: folders.date
+    id: folder.id,
+    name: folder.name,
+    displayName: folder.display_name,
+    thumbnail: thumbnailFile ? getPublicUrl(folder.name, thumbnailFile) : '',
+    images: images.map((img: Image) => getPublicUrl(folder.name, img.filename)),
+    date: folder.date
   }
 }

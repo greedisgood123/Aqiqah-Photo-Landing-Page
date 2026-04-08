@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { getSupabaseClient } from './supabase'
 
 /**
  * Upload an image file to Supabase storage
@@ -9,10 +9,11 @@ export async function uploadImage(
   orderIndex: number
 ): Promise<{ success: boolean; error?: string; filename?: string }> {
   try {
+    const supabase = getSupabaseClient()
     const fileExt = file.name.split('.').pop()
     const fileName = `${String(orderIndex + 1).padStart(2, '0')}.${fileExt}`
 
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('portfolio')
       .upload(`${folderName}/${fileName}`, file, {
         cacheControl: '3600',
@@ -58,6 +59,7 @@ export async function uploadFolderImages(
  */
 export async function deleteImage(folderName: string, filename: string): Promise<boolean> {
   try {
+    const supabase = getSupabaseClient()
     const { error } = await supabase.storage
       .from('portfolio')
       .remove([`${folderName}/${filename}`])
